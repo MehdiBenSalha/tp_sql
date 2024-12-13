@@ -1,0 +1,73 @@
+1/ Attributs porteurs de sens :
+Certains attributs de votre jeu de données sont directement utiles pour l'analyse de la consommation et de la production d'énergie. Voici les principaux attributs porteurs de sens, classés par type d'information :
+
+a) Identifiants géographiques et temporels :
+
+Code INSEE région : Identifiant unique pour chaque région, utile pour des analyses régionales.
+
+Région : Nom de la région, permet de comprendre la répartition géographique des données.
+
+Date et Heure : Informations temporelles cruciales pour des analyses sur la consommation/production au fil du temps.
+
+Date - Heure : Une colonne combinée qui peut être pratique pour les analyses temporelles.
+
+b) Consommation et Production d'énergie :
+
+Consommation (MW) : La consommation d'énergie en MW. Cet attribut est fondamental pour comprendre l'usage de l'énergie dans chaque région à un instant donné.
+
+Thermique (MW), Nucléaire (MW), Eolien (MW), Solaire (MW), Hydraulique (MW), Pompage (MW), Bioénergies (MW) : Production d'énergie par différentes sources.
+
+Ces attributs montrent les contributions spécifiques des différentes sources de production d'énergie à un instant donné.
+
+c) Stockage et déstockage d'énergie :
+
+Stockage batterie et Déstockage batterie : Indiquent respectivement l'énergie stockée et l'énergie extraite des batteries. Ces colonnes sont intéressantes pour
+analyser les systèmes de stockage et la gestion de l'énergie.
+
+d) Ech. physiques (MW) :
+
+Cela pourrait faire référence aux échanges d'énergie (import/export) entre différentes régions ou pays. Cela pourrait également indiquer des flux d'énergie 
+entre le réseau et les régions.
+
+e) TCO et TCH (pour chaque type de production) :
+
+TCO (Total Consommation d'Optimisation) et TCH (Total Consommation de Heure) pour chaque source d'énergie (Thermique, Nucléaire, Eolien, etc.) : 
+Ces colonnes représentent la part de chaque type de production d'énergie par rapport à la consommation totale. Elles sont importantes pour comprendre 
+la répartition des sources d'énergie.
+
+
+
+
+2/ Attributs redondants
+
+Certaines colonnes peuvent potentiellement être redondantes ou inutiles, selon l'objectif de l'analyse :
+
+Date et Date - Heure : Si vous avez déjà une colonne Date - Heure, la colonne Date pourrait être redondante. 
+Vous pouvez choisir de ne garder que celle qui est la plus pertinente pour vos besoins d'analyse.
+
+Heure et Date - Heure : Si vous avez une colonne Date - Heure (qui combine la date et l'heure), la colonne Heure pourrait être redondante. 
+Vous pouvez extraire l'heure de la colonne combinée si nécessaire.
+
+TCO et TCH : Ces colonnes peuvent être redondantes si les calculs de consommation d'énergie sont déjà inclus dans d'autres colonnes 
+(comme la consommation totale ou par source).
+
+
+3/ Fiabilité des champs TCO et TCH
+
+La fiabilité des champs TCO et TCH dépend de la manière dont ces valeurs sont calculées et mises à jour. Voici quelques points de contrôle :
+
+Validité des pourcentages : Vérifiez si les valeurs de TCO et TCH respectent un pourcentage réaliste (entre 0 et 100 %). Vous pouvez aussi tester 
+si la somme des TCO ou TCH pour toutes les sources d'énergie à un moment donné donne 100 %.
+
+Cohérence avec la consommation et la production : Vérifiez si les valeurs dans les colonnes de production d'énergie 
+par exemple, Thermique (MW), Nucléaire (MW), etc.) correspondent bien aux valeurs dans TCO et TCH. Par exemple, 
+si la production totale d'électricité est de 100 MW, les valeurs de TCO et TCH devraient refléter cette quantité.
+
+4/Le "Pompage" fait généralement référence au pompage-turbinage, un mécanisme de stockage d'énergie. Dans ce processus, 
+l'électricité excédentaire est utilisée pour pomper de l'eau vers un réservoir élevé. Lorsqu'il y a un besoin en énergie, l'eau est libérée et fait tourner des turbines pour produire de l'électricité.
+
+Pompage (MW) : Représente la capacité utilisée pour pomper de l'eau dans un réservoir, donc ce n'est pas une "consommation" ou une "production" d'énergie 
+au sens classique. Il s'agit d'une forme de stockage d'énergie.
+
+Cela ne doit pas être confondu avec une consommation ou une production classique, car l'énergie est stockée pour être utilisée plus tard 
+(généralement lors de pics de demande).

@@ -1,0 +1,5 @@
+transform/duckdb
+venv/
+transform/data.csv
+transform/dev.duckdb
+*.duckdb

@@ -13,7 +13,8 @@
             ORDER BY "Date"
             RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
         ) / 2000 AS consommation_gwh  -- Conversion de la consommation en GWh
-    FROM clean
+    FROM      "dev"."main"."clean"
+
 )
 
 SELECT 

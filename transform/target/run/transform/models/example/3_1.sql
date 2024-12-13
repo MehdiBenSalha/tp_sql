@@ -16,7 +16,7 @@
     AVG(COALESCE(TRY_CAST("consommation" AS INT), 0)) AS moyenne_consommation_totale,
 
     AVG(COALESCE(production_totale, 0)) AS moyenne_production_totale
-FROM clean
+   from  "dev"."main"."clean"
 GROUP BY strftime('%Y-%m', Date), "Région"  -- Remplacer TO_CHAR par strftime
 ORDER BY mois, "Région"  -- Tri par mois et région
   );

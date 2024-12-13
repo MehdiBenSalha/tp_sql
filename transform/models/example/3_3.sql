@@ -10,7 +10,8 @@ WITH data_with_consumption AS (
             ORDER BY "Date"
             RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
         ) / 2000 AS consommation_gwh  -- Conversion de la consommation en GWh
-    FROM clean
+    FROM      {{ ref('clean') }}
+
 )
 
 SELECT 

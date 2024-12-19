@@ -1,5 +1,7 @@
 transform/duckdb
 venv/
 transform/data.csv
+transform/temperature-quotidienne-regionale.csv
 transform/dev.duckdb
 *.duckdb
+*.csv

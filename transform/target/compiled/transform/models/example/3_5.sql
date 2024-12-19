@@ -6,7 +6,7 @@ WITH yearly_renewable_production AS (
             COALESCE(hydraulique, 0) + 
             COALESCE(bioenergies, 0)) / 2000 AS production_renouvelable_totale_gwh -- Conversion MW → GWh
     FROM "dev"."main"."clean"
-    WHERE EXTRACT(YEAR FROM "Date") BETWEEN 2013 AND 2021
+    WHERE EXTRACT(YEAR FROM "Date") BETWEEN 2013 AND 2022
     GROUP BY EXTRACT(YEAR FROM "Date")
 ),
 daily_cumulative_consumption AS (
@@ -20,7 +20,7 @@ daily_cumulative_consumption AS (
             ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
         ) AS consommation_cumulee_gwh -- Consommation cumulée en GWh
     FROM "dev"."main"."clean"
-    WHERE EXTRACT(YEAR FROM "Date") BETWEEN 2013 AND 2021
+    WHERE EXTRACT(YEAR FROM "Date") BETWEEN 2013 AND 2022
     GROUP BY EXTRACT(YEAR FROM "Date"), "Date"
 ),
 threshold_exceedance AS (

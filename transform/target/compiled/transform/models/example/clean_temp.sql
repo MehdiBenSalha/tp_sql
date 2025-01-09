@@ -1,17 +1,17 @@
 WITH temperature_data AS (
-    -- Chargement des données de température et sélection des informations nécessaires
+    -- Chargement des données de température
     SELECT
         ID,
         Date,
-        "Code INSEE région" AS code_insee_region,  -- Correction ici : changement de nom de la colonne
+        "Code INSEE région" AS code_insee_region,
         Région,
         "TMin (°C)" AS tmin,
         "TMax (°C)" AS tmax,
         "TMoy (°C)" AS tmoy
-    FROM "dev"."main"."temp"  -- Utilisation de la référence DBT pour la table temp
+    FROM temperature  -- La table existante
 ),
 clean_data_with_temp AS (
-    -- Jointure entre la table clean et les données de température
+    -- Jointure entre les données nettoyées et les données de température
     SELECT
         c."Code INSEE région",
         c.Région,
@@ -27,18 +27,18 @@ clean_data_with_temp AS (
         c.pompage,
         c.ech_physiques,
         c.production_totale,
-        t.tmin,  -- Utilisation de tmin ici
-        t.tmax,  -- Utilisation de tmax ici
-        t.tmoy   -- Utilisation de tmoy ici
-    FROM "dev"."main"."clean" c
+        t.tmin,
+        t.tmax,
+        t.tmoy
+    FROM "dev"."main"."clean" c  -- Table clean, issue de DBT
     LEFT JOIN temperature_data t
         ON c.Date = t.Date
-        AND c."Code INSEE région" = t.code_insee_region  -- Correction : assurez-vous que les noms correspondent
+        AND c."Code INSEE région" = t.code_insee_region
 )
--- Création d'une table finale avec les données intégrées
+-- Création de la table finale
 SELECT
     "Code INSEE région",
-    "Région",
+    Région,
     Date,
     Heure,
     consommation,
@@ -51,7 +51,7 @@ SELECT
     pompage,
     ech_physiques,
     production_totale,
-    tmin,  -- Utilisation de tmin ici
-    tmax,  -- Utilisation de tmax ici
-    tmoy   -- Utilisation de tmoy ici
+    tmin,
+    tmax,
+    tmoy
 FROM clean_data_with_temp

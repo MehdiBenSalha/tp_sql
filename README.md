@@ -1,6 +1,11 @@
 # Projet DBT - Analyse et Intégration des Données de Température et de Consommation
 
-Ce projet DBT (Data Build Tool) vise à analyser et intégrer des données relatives à la consommation énergétique régionale et aux températures quotidiennes régionales. Il comprend la modélisation des données, des transformations SQL, des tests, et une documentation complète.
+Ce projet DBT (Data Build Tool) vise à analyser et intégrer des données relatives à la consommation énergétique régionale et aux températures quotidiennes régionales. Il comprend la modélisation des données, des transformations SQL, des tests, et une documentation complète.  
+
+# Travail réalisé par :  
+### Jrad Ghassen  
+### Ben Salha Mehdi  
+
 
 ## Structure du Projet
 

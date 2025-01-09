@@ -678,4 +678,175 @@ WITH consommation_par_filiere AS (
 )
 SELECT * FROM consommation_par_filiere;
 ```
+## Requête pour construire le cuboïde par mois, quart de jour et intervalle de température
+
+**Description :**  
+Cette requête calcule la consommation et la production d'énergie pour chaque mois, chaque quart de jour (Nuit, Matin, Après-midi, Soir) et chaque intervalle de température (Glacial, Froid, Modéré, Idéal, Chaud, Extrême). Elle agrège les données de consommation et de production par ces dimensions, à partir d'une table de données de température et d'énergie.
+
+```sql
+WITH temperature_interval AS (
+    SELECT 
+        CASE
+            WHEN tmin < 0 THEN 'Glacial'
+            WHEN tmin >= 0 AND tmin < 8 THEN 'Froid'
+            WHEN tmin >= 8 AND tmin < 17 THEN 'Modéré'
+            WHEN tmin >= 17 AND tmin < 25 THEN 'Idéal'
+            WHEN tmin >= 25 AND tmin < 33 THEN 'Chaud'
+            ELSE 'Extrême'
+        END AS temperature_intervalle,
+        "Date",
+        "Heure",
+        "Code INSEE région",
+        "Région",
+        consommation,
+        eolien,
+        thermique,
+        bioenergies,
+        nucleaire,
+        solaire,
+        hydraulique,
+        pompage,
+        production_totale
+    FROM clean_temp
+),
+quart_de_jour AS (
+    SELECT 
+        ti."Code INSEE région",
+        ti."Région",
+        ti."Date",
+        ti."Heure",
+        CASE 
+            WHEN strftime('%H', CAST('2000-01-01 ' || ti."Heure" AS TIMESTAMP)) BETWEEN '00' AND '06' THEN 'Nuit'
+            WHEN strftime('%H', CAST('2000-01-01 ' || ti."Heure" AS TIMESTAMP)) BETWEEN '07' AND '12' THEN 'Matin'
+            WHEN strftime('%H', CAST('2000-01-01 ' || ti."Heure" AS TIMESTAMP)) BETWEEN '13' AND '18' THEN 'Après-midi'
+            ELSE 'Soir'
+        END AS quart,
+        ti.temperature_intervalle,
+        ti.consommation,
+        ti.eolien,
+        ti.thermique,
+        ti.bioenergies,
+        ti.nucleaire,
+        ti.solaire,
+        ti.hydraulique,
+        ti.pompage,
+        ti.production_totale
+    FROM temperature_interval ti
+),
+cuboide_par_mois_quart_temp AS (
+    SELECT 
+        strftime('%Y-%m', q."Date") AS mois,
+        q.quart,
+        q.temperature_intervalle,
+        SUM(q.consommation) AS consommation_total_GWh,
+        SUM(q.eolien) AS Eolien_GWh,
+        SUM(q.thermique) AS Thermique_GWh,
+        SUM(q.bioenergies) AS Bioénergies_GWh,
+        SUM(q.nucleaire) AS Nucléaire_GWh,
+        SUM(q.solaire) AS Solaire_GWh,
+        SUM(q.hydraulique) AS Hydraulique_GWh,
+        SUM(q.pompage) AS Pompage_GWh,
+        SUM(q.production_totale) AS Production_Totale_GWh
+    FROM quart_de_jour q
+    GROUP BY
+        mois, 
+        q.quart,
+        q.temperature_intervalle
+)
+SELECT * FROM cuboide_par_mois_quart_temp;
+```
+
+
+## Procédure de mise à jour incrémentale de l'entrepôt de données
+
+**Description :**  
+Cette procédure vise à mettre à jour l'entrepôt de données de manière incrémentale, en évitant le recalcul de l'intégralité des données. Elle prend en compte les statuts des données : temps réel, consolidée et définitive.
+
+### 1. Identification des nouvelles données
+
+**Objectif :** Identifier les nouvelles données arrivant dans le système, par rapport à la dernière mise à jour de l'entrepôt.
+
+- **Sources de données :** Vérifier les nouvelles données disponibles dans les sources externes.
+- **Critère de mise à jour :** Les données sont identifiées comme nouvelles si elles ont une date de collecte ou un identifiant supérieur à ceux déjà présents dans l'entrepôt.
+  
+**Étapes :**
+- Vérifier la source de données pour les nouvelles entrées.
+- Identifier les enregistrements dont les dates ou identifiants sont plus récents que ceux enregistrés dans l'entrepôt.
+  
+### 2. Gestion du statut des données
+
+Les données peuvent avoir différents statuts : **temps réel**, **consolidée**, ou **définitive**.
+
+- **Données temps réel :** Ce sont des données brutes collectées en temps réel, souvent sujettes à des corrections et mises à jour fréquentes.
+- **Données consolidées :** Ce sont des données agrégées ou corrigées, représentant une version plus fiable mais qui peut encore subir des modifications.
+- **Données définitives :** Ce sont les données finalisées et validées, qui ne doivent plus être modifiées.
+
+**Procédure de mise à jour des statuts :**
+1. **Temps réel à consolidée :**  
+   - Dès que des données sont consolidées, leur statut passe de "temps réel" à "consolidée".
+   - Cette mise à jour se produit après une étape de validation des données par des processus de correction ou d’agrégation.
+  
+2. **Consolidée à définitive :**  
+   - Une fois que les données ont été validées et qu'aucune mise à jour supplémentaire n'est prévue, elles sont marquées comme définitives.
+   - Cela signifie que les données ne doivent plus être modifiées, sauf en cas d’erreurs graves nécessitant une correction.
+
+**Étapes :**
+- Vérifier le statut actuel de chaque nouvelle donnée.
+- Mettre à jour les données avec un statut "temps réel" en "consolidée" lorsque les corrections ou agrégations sont effectuées.
+- Mettre à jour les données avec un statut "consolidée" en "définitive" lorsqu'elles sont validées et finalisées.
+
+### 3. Mise à jour incrémentale des données dans l'entrepôt
+
+**Objectif :** Mettre à jour l'entrepôt de données de manière incrémentale pour ne pas recalculer l'intégralité des données.
+
+**Étapes :**
+1. **Récupérer les nouvelles données :**  
+   - Extraire les nouvelles données à partir de la source (par exemple, fichiers CSV, API, bases de données).
+   - Identifier les données correspondant aux nouveaux enregistrements à ajouter à l'entrepôt.
+  
+2. **Vérification des duplications :**  
+   - Comparer les nouvelles données avec celles déjà présentes dans l'entrepôt (par exemple, par identifiant unique ou date).
+   - S'assurer qu'il n'y a pas de doublons ou de mises à jour non souhaitées des anciennes données.
+  
+3. **Insertion des nouvelles données :**  
+   - Insérer uniquement les nouvelles données ou les données mises à jour (basées sur la date de dernière mise à jour).
+   - S'assurer que les nouvelles données sont insérées avec le bon statut (temps réel, consolidée, définitive).
+
+4. **Mise à jour des données existantes :**  
+   - Pour les enregistrements existants dont les données ont été modifiées (en raison de nouvelles agrégations ou corrections), mettre à jour uniquement les champs concernés.
+   - Le statut des données doit être ajusté en fonction des étapes de validation (temps réel à consolidée, consolidée à définitive).
+
+5. **Gestion des données temporelles :**  
+   - Pour les données temporelles (par exemple, consommations horaires), ne mettre à jour que les périodes concernées sans recalculer l’intégralité des historiques.
+
+6. **Validation des données mises à jour :**  
+   - Vérifier la qualité des données après chaque mise à jour.
+   - Mettre en place des tests de cohérence pour s'assurer que les agrégations et transformations ont été correctement effectuées.
+
+### 4. Archivage et gestion des versions
+
+**Objectif :** Garder une trace de l’historique des modifications et assurer une gestion des versions des données.
+
+**Étapes :**
+- Archivez les anciennes versions des données (avant la mise à jour) pour une traçabilité.
+- Assurez-vous que chaque modification est enregistrée avec une date et un identifiant de version pour chaque mise à jour.
+
+### 5. Planification des mises à jour
+
+**Objectif :** Automatiser la mise à jour incrémentale sur des intervalles réguliers.
+
+**Étapes :**
+- Planifier des mises à jour régulières (par exemple, quotidiennement ou hebdomadairement) selon la fréquence de collecte des nouvelles données.
+- Automatiser le processus pour minimiser les interventions manuelles et garantir une mise à jour rapide.
+
+---
+
+### Exemple de flux de travail :
+
+1. **Données entrantes :** Collecte de données en temps réel.
+2. **Validation et agrégation :** Les données sont traitées et consolidées.
+3. **Mise à jour incrémentale :** Les nouvelles données consolidées sont ajoutées ou mises à jour dans l’entrepôt sans recalculer l’intégralité des anciennes données.
+4. **Changement de statut :** Les données passent de "temps réel" à "consolidée", puis de "consolidée" à "définitive" après validation.
+
+Cette procédure permet de maintenir l'intégrité de l'entrepôt tout en optimisant les ressources et en évitant des recalculs inutiles.
 
